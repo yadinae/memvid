@@ -17,11 +17,12 @@ jobs:
     container:
       image: quay.io/pypa/manylinux_2_28_x86_64
     steps:
-      - name: Install Rust 1.85
+      - name: Install Rust latest stable
         run: |
           yum install -y openssl-devel curl
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.85
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          rustc --version
 
       - name: Setup Python
         run: |
