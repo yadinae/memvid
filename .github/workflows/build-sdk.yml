@@ -26,14 +26,18 @@ jobs:
           echo "PYBIN=$PYBIN" >> "$GITHUB_ENV"
           "$PYBIN/pip" install --upgrade pip
 
-      - name: Install maturin (prebuilt wheel, avoids sdist build requiring rustc 1.89)
+      - name: Install maturin (prebuilt wheel only)
         run: |
           "$PYBIN/pip" install maturin --only-binary :all:
 
-      - name: Download sdist from PyPI
+      - name: Download sdist via curl (avoids pip --no-binary :all: trying to build maturin from source)
         run: |
           VERSION="${{ github.event.inputs.sdk_version || '2.0.160' }}"
-          "$PYBIN/pip" download "memvid-sdk==${VERSION}" --no-binary :all: --no-deps -d /tmp/sdist
+          mkdir -p /tmp/sdist
+          curl -sL "https://pypi.org/pypi/memvid-sdk/${VERSION}/json" -o /tmp/sdist/meta.json
+          URL=$(python3 -c "import json; d=json.load(open('/tmp/sdist/meta.json')); [print(f['url']) for f in d['urls'] if f['filename'].endswith('.tar.gz')][0]")
+          echo "URL=$URL"
+          curl -sL "$URL" -o "/tmp/sdist/memvid_sdk-${VERSION}.tar.gz"
           tar xzf "/tmp/sdist/memvid_sdk-${VERSION}.tar.gz" -C /tmp/
           echo "SRC=/tmp/memvid_sdk-${VERSION}" >> "$GITHUB_ENV"
 
