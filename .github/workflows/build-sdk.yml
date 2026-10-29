@@ -1,6 +1,9 @@
 name: Build memvid-sdk wheel (manylinux_2_28, glibc>=2.28 -> works on alinux8 glibc2.32)
 
 on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/build-sdk.yml']
   workflow_dispatch:
     inputs:
       sdk_version:
@@ -30,12 +33,12 @@ jobs:
         run: |
           "$PYBIN/pip" install maturin --only-binary :all:
 
-      - name: Download sdist via curl (avoids pip --no-binary :all: trying to build maturin from source)
+      - name: Download sdist via curl
         run: |
           VERSION="${{ github.event.inputs.sdk_version || '2.0.160' }}"
           mkdir -p /tmp/sdist
           curl -sL "https://pypi.org/pypi/memvid-sdk/${VERSION}/json" -o /tmp/sdist/meta.json
-          URL=$(python3 -c "import json; d=json.load(open('/tmp/sdist/meta.json')); [print(f['url']) for f in d['urls'] if f['filename'].endswith('.tar.gz')][0]")
+          URL=$(python3 -c "import json; d=json.load(open('/tmp/sdist/meta.json')); print([f['url'] for f in d['urls'] if f['filename'].endswith('.tar.gz')][0])")
           echo "URL=$URL"
           curl -sL "$URL" -o "/tmp/sdist/memvid_sdk-${VERSION}.tar.gz"
           tar xzf "/tmp/sdist/memvid_sdk-${VERSION}.tar.gz" -C /tmp/
