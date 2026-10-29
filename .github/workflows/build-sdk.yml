@@ -22,7 +22,9 @@ jobs:
           yum install -y openssl-devel curl
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-          rustc --version
+
+      - name: Verify Rust
+        run: rustc --version
 
       - name: Setup Python
         run: |
