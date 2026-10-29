@@ -14,7 +14,7 @@ jobs:
     container:
       image: quay.io/pypa/manylinux_2_28_x86_64
     steps:
-      - name: Install Rust inside manylinux container
+      - name: Install Rust 1.85
         run: |
           yum install -y openssl-devel curl
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.85
@@ -22,10 +22,13 @@ jobs:
 
       - name: Setup Python
         run: |
-          ls /opt/python/
           PYBIN=$(ls -d /opt/python/cp311*/bin | head -1)
           echo "PYBIN=$PYBIN" >> "$GITHUB_ENV"
-          "$PYBIN/pip" install --upgrade pip maturin
+          "$PYBIN/pip" install --upgrade pip
+
+      - name: Install maturin (prebuilt wheel, avoids sdist build requiring rustc 1.89)
+        run: |
+          "$PYBIN/pip" install maturin --only-binary :all:
 
       - name: Download sdist from PyPI
         run: |
