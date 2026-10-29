@@ -12,7 +12,6 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     container:
-      # manylinux_2_28 = glibc 2.28 baseline; produced wheels work on glibc >= 2.28 (incl. 2.32)
       image: quay.io/pypa/manylinux_2_28_x86_64
     steps:
       - name: Install Rust inside manylinux container
@@ -23,26 +22,25 @@ jobs:
 
       - name: Setup Python
         run: |
-          # manylinux image ships cp38-cp313 in /opt/python
           ls /opt/python/
-          PY=$(ls -d /opt/python/cp311*/bin | head -1)
-          echo "PYBIN=$PY" >> "$GITHUB_ENV"
-          $PY/pip install --upgrade pip maturin
+          PYBIN=$(ls -d /opt/python/cp311*/bin | head -1)
+          echo "PYBIN=$PYBIN" >> "$GITHUB_ENV"
+          "$PYBIN/pip" install --upgrade pip maturin
 
       - name: Download sdist from PyPI
         run: |
           VERSION="${{ github.event.inputs.sdk_version || '2.0.160' }}"
-          $PY/pip download "memvid-sdk==${VERSION}" --no-binary :all: --no-deps -d /tmp/sdist
-          tar xzf /tmp/sdist/memvid_sdk-${VERSION}.tar.gz -C /tmp/
+          "$PYBIN/pip" download "memvid-sdk==${VERSION}" --no-binary :all: --no-deps -d /tmp/sdist
+          tar xzf "/tmp/sdist/memvid_sdk-${VERSION}.tar.gz" -C /tmp/
           echo "SRC=/tmp/memvid_sdk-${VERSION}" >> "$GITHUB_ENV"
 
       - name: Build wheel (abi3 py3.8+, lex+vec+temporal_track)
         run: |
           cd "$SRC"
-          $PY/maturin build --release --features lex,vec,temporal_track --out /tmp/wheels
+          "$PYBIN/maturin" build --release --features lex,vec,temporal_track --out /tmp/wheels
           ls -la /tmp/wheels/
-          auditwheel show /tmp/wheels/*.whl || true
-          auditwheel repair /tmp/wheels/*.whl -w /tmp/wheels_repaired || cp /tmp/wheels/*.whl /tmp/wheels_repaired/
+          mkdir -p /tmp/wheels_repaired
+          auditwheel repair /tmp/wheels/*.whl -w /tmp/wheels_repaired 2>&1 || cp /tmp/wheels/*.whl /tmp/wheels_repaired/
 
       - name: Upload wheel
         uses: actions/upload-artifact@v4
